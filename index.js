@@ -10,7 +10,7 @@ const DiscordFunctions = require('./discord-functions.js')
 const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMessages] });
 
 // Disables the morning update. Oh, and logging I guess.
-const debug = true
+const debug = false
 function dbprint(string) {
   if (debug) console.log(string);
 };
