@@ -39,12 +39,6 @@ const reqHeaders = {
   'Origin': 'https://opentimetable.dcu.ie/'
 }
 
-// Debug doesn't disable or enable any features in timetable.js right now.
-const debug = false
-function dbprint(string) {
-  if (debug) console.log(string);
-}
-
 function startOfWeek(dateToFetch) {
   var currentDate = new Date(dateToFetch)
   var dateDifference = currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1);
@@ -98,7 +92,7 @@ async function fetchCourseCodeIdentity(query) {
       .then(function (res_body) {
         let results = res_body['Results']
         if (results.length == 0) {
-          reject(`Course identity ${query} not found with supplied course code.`)
+          reject(`Course identity '${query}' not found with supplied course code.`)
         } else {
           resolve(res_body['Results'][0]['Identity'])
         }
