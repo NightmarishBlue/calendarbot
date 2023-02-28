@@ -40,7 +40,7 @@ async function parseChannels(dataObject, nextDay, mode) {
         } else {
           targetObject = await client.users.fetch(targetID)
         }
-        sendTimetableToChannel(targetObject, await Timetable.fetchCourseCodeIdentity(optionData.courseCode), 1)
+        sendTimetableToChannel(targetObject, await Timetable.fetchCourseData(optionData.courseCode), 1)
       } catch {
         console.error(`Failed to find ${mode} with ID '${targetID}', removing from database.`/*, err*/)
         delete dataObject[targetID]
@@ -62,10 +62,8 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (commandName === 'timetable') {
-    //console.log(`${interaction.user.username} used ${interaction.commandName}`)
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
-
-    const courseID = await Timetable.fetchCourseCodeIdentity(courseCode).catch(err => {/*console.error(err)*/ });
+    const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/ });
     if (!courseID) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
       await interaction.reply({ embeds: [embed] });
@@ -94,7 +92,7 @@ client.on('interactionCreate', async interaction => {
       .then(async (res) => {
         res = res[0];
         if (res.CategoryEvents.length < 1) {
-          let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for ${res.Name}`)
+          let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for \`${res.Name}\``)
           await interaction.reply({ embeds: [embed] });
           return
         }
@@ -121,6 +119,38 @@ client.on('interactionCreate', async interaction => {
     const embedsToSend = await RoomCheck.checkRoom(errorEmbed, roomCodes, timeRange);
     await interaction.followUp({ embeds: embedsToSend });
   }
+
+  if (commandName === 'updateme') {
+    await interaction.deferReply({ephemeral: true})
+    const userID = interaction.user.id
+    let courseCode = interaction.options.getString('course').toUpperCase()
+    
+    try {
+      courseCode = await Timetable.fetchCourseData(courseCode, 'Name')
+      let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
+
+      userData[userID] = {'courseCode': courseCode}
+    
+      let infoString = ''
+      if (interaction.options.getBoolean('nextday')) {
+        infoString += 'You will receive your timetable the day before at `18:00`.'
+        userData[userID]['nextDay'] = true
+      } else {
+        infoString += 'You will receive your timetable in the morning at `6:00`.'
+      }
+
+      writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+
+      const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle('Successfully registered')
+        .setColor('Green')
+        .addFields({"name": `You will receive updates for \`${courseCode}\``, "value": infoString})
+
+      await interaction.followUp({embeds: [outputEmbed]})
+    } catch {
+      await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `The course '\`${courseCode}\`' was not found.`, 'Did you spell it correctly?')]})
+    }
+  }
 });
 
 /**
@@ -135,7 +165,7 @@ const sendTimetableToChannel = async function (target, courseID, offset) {
     dateToFetch.setDate(dateToFetch.getDate() + offset)
     // not sure of the best way to deal with the nested promise causing an unhandled error, but this one works.
     // let courseID
-    // try {courseID = await Timetable.fetchCourseCodeIdentity(courseCode)} catch {return true}
+    // try {courseID = await Timetable.fetchCourseData(courseCode)} catch {return true}
 
     Timetable.fetchRawTimetableData(courseID, day, dateToFetch)
       .then(async (res) => {

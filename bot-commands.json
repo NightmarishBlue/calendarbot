@@ -51,5 +51,28 @@
         "name": "ping",
         "type": 1,
         "description": "Check if the bot is currently alive."
+    },
+    {
+        "name": "updateme",
+        "type": 1,
+        "description": "Register your data to get updates by DM.",
+        "options": [
+            {
+                "name": "course",
+                "description": "The code for your course. Case insensitive.",
+                "type": 3,
+                "required": true
+            },
+            {
+                "name": "nextday",
+                "description": "Whether or not you want to receive updates the day before.",
+                "type": 5
+            },
+            {
+                "name": "ignoretutorials",
+                "description": "Whether or not you want to see tutorials in your timetable.",
+                "type": 5
+            }
+        ]
     }
 ]

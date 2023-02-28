@@ -79,7 +79,9 @@ function constructRequestBody(day, dateToFetch, identities, startTime, endTime) 
 }
 
 // Makes a search on opentimetable for a keyword and returns the first courses result's identity
-async function fetchCourseCodeIdentity(query) {
+// If data is defined, grab that instead, such as 'Name'
+async function fetchCourseData(query, data) {
+  data ??= 'Identity'
   var reqPayload = {
     method: 'POST',
     uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${programmeIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
@@ -90,11 +92,11 @@ async function fetchCourseCodeIdentity(query) {
   const output = new Promise(function (resolve, reject) {
     Request(reqPayload) // Send the HTTP Request
       .then(function (res_body) {
-        let results = res_body['Results']
-        if (results.length == 0) {
-          reject(`Course identity '${query}' not found with supplied course code.`)
+        res_body = res_body['Results']
+        if (res_body.length == 0) {
+          reject(`Course identity not found with supplied course code '${query}'.`)
         } else {
-          resolve(res_body['Results'][0]['Identity'])
+          resolve(res_body[0][data])
         }
       })
       .catch(function (err) { // Catch any errors
@@ -126,11 +128,6 @@ async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new D
 
     Request(reqPayload) // Send the HTTP Request
       .then(async function (res_body) {
-        //     await Promise.all(res_body[0].CategoryEvents.map(async event => {
-        //         let moduleName = await fetchModuleNameFromCode(event.Name.slice(0, 5));
-        //         return event.Name = moduleName;
-        //     }));
-
         for (let currentIndex = 0; currentIndex < res_body.length; currentIndex++) {
           await Promise.all(res_body[parseInt(currentIndex)].CategoryEvents.map(async event => {
             await fetchModuleNameFromCode(event.Name.slice(0, 5)).then(moduleName => {
@@ -144,7 +141,7 @@ async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new D
         resolve(res_body)
       })
       .catch(function (err) { // Catch any errors
-        console.error(err)
+        //console.error(err)
         reject(err)
       });
   })
@@ -166,7 +163,7 @@ async function fetchModuleNameFromCode(query) {
         let results = res_body['Results'];
 
         if (results.length == 0) {
-          reject('Course identity not found with supplied course code.');
+          reject(`Module identity not found with supplied module code '${query}'.`);
         } else {
           resolve(res_body['Results'][0]['Name']);
         }
@@ -178,7 +175,7 @@ async function fetchModuleNameFromCode(query) {
 }
 
 exported = {
-  weekdays, fetchDay, extractTimeFromDate, timeToString,reqHeaders, startOfWeek, constructRequestBody, fetchCourseCodeIdentity, fetchRawTimetableData, fetchModuleNameFromCode
+  weekdays, fetchDay, extractTimeFromDate, timeToString,reqHeaders, startOfWeek, constructRequestBody, fetchCourseData, fetchRawTimetableData, fetchModuleNameFromCode
 }
 
 module.exports = exported
