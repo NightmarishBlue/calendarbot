@@ -11,77 +11,27 @@ const DiscordFunctions = require('./discord-functions.js')
 
 const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMessages] });
 
-// Disables the morning update.
-const debug = false
-
 client.on('ready', async () => {
   console.log(`${client.user.username} is online!`);
 
-  // const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528', '446354264478973952', '315217872005627914', '964202467095093298', '325310653130735618', '984912239817547846'];
-  // const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'COMSCI2', 'COMSCI1', 'COMSCI1', 'COMSCI1'];
-  // const channelIDs = ['1023659560176726077']
-  // const channelCourses = ['COMSCI1']
-
-  // let users = [];
-  // for await (user of userIDs) {
-  //   users.push(await client.users.fetch(user));
-  // }
-  // console.log(`Loaded users`);
-
-  // let channels = [];
-  // for await (channel of channelIDs) {
-  //   channels.push(await client.channels.fetch(channel).catch(console.error));
-  // }
-  // console.log(`Loaded channels`);
-
-  let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
-
-  scheduler.scheduleJob('0 6 * * *', () => {
-    if (false) {
-      users.forEach(user => {
-        try {
-          morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
-        } catch (err) {
-          console.error(err, user.id);
-        }
-      });
-
-      channels.forEach(channel => {
-        try {
-          morningUpdate(channel, channelCourses[channelIDs.indexOf(channel.id)]);
-        } catch (err) {
-          console.error(err, channel.id);
-        }
-      });
-    }
-  })
-
-  // console.log(userData)
-  // for await ([userID, [courseCode, advance]] of Object.entries(userData)) {
-  //   if (true) {
-  //     let userObject
-  //     try {
-  //       userObject = await client.users.fetch(userID);
-  //     } catch (err) {
-  //       console.error(`Failed to find user with ID '${userID}', removing from database.`/*, err*/)
-  //       return delete userData[userID]
-  //     }
-  //     morningUpdate(userObject, courseCode, advance)
-  //   }
-  // }
-  //console.log(userData)
-
-  userData = await morningUpdate(userData, true, 'user')
-  channelData = await morningUpdate(channelData, true, 'channel')
-
-  writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 4))
+  scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
+  scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
 });
 
-async function morningUpdate(dataObject, nextDay, mode) {
-  // This function needs to iterate over the dict asynchronously, performing this operation on each and then returning the updated dict.
-  //console.log(dataObject)
-  let testObject = structuredClone(dataObject)
-  await Promise.allSettled(Object.entries(testObject).map(async ([targetID, optionData]) => {
+async function timetableUpdate(nextDay) {
+  let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
+
+  userData = await parseChannels(userData, nextDay, 'user')
+  channelData = await parseChannels(channelData, nextDay, 'channel')
+
+  writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+}
+
+async function parseChannels(dataObject, nextDay, mode) {
+  // This function iterates over the dict asynchronously
+  // If any errors arrise on an entry, it's removed from the dict
+  // The new dict is returned, to be written onto the file on disk.
+  await Promise.allSettled(Object.entries(dataObject).map(async ([targetID, optionData]) => {
     if (optionData.nextDay == nextDay) {
       let targetObject
       try {
@@ -90,30 +40,13 @@ async function morningUpdate(dataObject, nextDay, mode) {
         } else {
           targetObject = await client.users.fetch(targetID)
         }
-        sendTimetableToChannel(targetObject, optionData.courseCode, await Timetable.fetchCourseCodeIdentity(optionData.courseCode), 1)
+        sendTimetableToChannel(targetObject, await Timetable.fetchCourseCodeIdentity(optionData.courseCode), 1)
       } catch {
         console.error(`Failed to find ${mode} with ID '${targetID}', removing from database.`/*, err*/)
-        delete testObject[targetID]
+        delete dataObject[targetID]
       }
     }
   }))
-
-  console.log(testObject)
-
-  // for (const [targetID, optionData] of Object.entries(testObject)) {
-  //   try {
-  //     let targetObject
-  //     if (mode == "channel") {
-  //       targetObject = await client.channels.fetch(targetID)
-  //     } else {
-  //       targetObject = await client.users.fetch(targetID)
-  //     }
-  //     sendTimetableToChannel(targetObject, optionData.courseCode, 1).catch(delete testObject[targetID])
-  //   } catch {
-  //     delete testObject[targetID]
-  //   }
-  // }
-  // console.log(testObject)
   return dataObject
 }
 
@@ -192,25 +125,27 @@ client.on('interactionCreate', async interaction => {
 
 /**
  * @param {Discord.User} target
- * @param {String} course
+ * @param {String} courseID
  * @param {Int} offset
  */
-const sendTimetableToChannel = async function (target, courseCode, courseID, offset) {
+const sendTimetableToChannel = async function (target, courseID, offset) {
     offset = (offset) ? 1 : 0
     const day = Timetable.fetchDay(offset)
     const dateToFetch = new Date()
     dateToFetch.setDate(dateToFetch.getDate() + offset)
-    //const courseID = await Timetable.fetchCourseCodeIdentity(course)
-    
+    // not sure of the best way to deal with the nested promise causing an unhandled error, but this one works.
+    // let courseID
+    // try {courseID = await Timetable.fetchCourseCodeIdentity(courseCode)} catch {return true}
+
     Timetable.fetchRawTimetableData(courseID, day, dateToFetch)
       .then(async (res) => {
-        res = res[0].CategoryEvents;
-        //if (res.length < 1) return
+        res = res[0]
+        //if (res.CategoryEvents.length < 1) return
 
         let embed = new Discord.EmbedBuilder()
-          .setTitle(`${courseCode} Timetable for ${dateToFetch.toDateString()}`)
+          .setTitle(`${res.Name} Timetable for ${dateToFetch.toDateString()}`)
           .setColor('Green');
-        embed = DiscordFunctions.parseEvents(res, embed)
+        embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
         embed.setDescription(`Times shown are in GMT+1`);
         
         target.send({ embeds: [embed] }).catch(console.error);

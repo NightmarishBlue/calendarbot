@@ -4,3 +4,4 @@ package-lock.json
 
 local/
 command-ids.txt
+user-data.json
