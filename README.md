@@ -32,4 +32,4 @@ If you call it and leave `course` blank, you will be removed from the database.
 Gives you your daily update settings.
 
 
-There are `/updatechannel` and `/channelinfo`, which work the exact same as the above, but will send to a server channel instead. You need the Manage Channels permission (I think) for it to work.
+There are `/updatechannel` and `/channelinfo`, which work the exact same as the above, but will send to a server channel instead. You need the Manage Channels permission (I think) for it to work. The info is stored in `user-data.json`, in the same directory as the main JSON files.
