@@ -16,8 +16,10 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
+  updateCourseIDs()
 });
 
+// The daily update function
 async function timetableUpdate(nextDay) {
   let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
 
@@ -27,10 +29,10 @@ async function timetableUpdate(nextDay) {
   writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
 }
 
+// This function iterates over the dict asynchronously
+// If any errors arrise on an entry, it's removed from the dict. Ignore the catch jank, JS's promise syntax could be better.
+// The new dict is returned, to be written onto the file on disk.
 async function parseData(dataObject, nextDay, mode) {
-  // This function iterates over the dict asynchronously
-  // If any errors arrise on an entry, it's removed from the dict. Ignore the catch jank, JS's promise syntax could be better.
-  // The new dict is returned, to be written onto the file on disk.
   await Promise.allSettled(Object.entries(dataObject).map(async function ([targetChannelID, optionData]) {
     if (optionData.nextDay == nextDay) {
       let targetObject
@@ -52,9 +54,29 @@ async function parseData(dataObject, nextDay, mode) {
   return dataObject
 }
 
+// At the end of each year, your course code should change. This will update it, provided the new code exists.
+async function updateCourseIDs() {
+  let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
+  for (dataObject of [userData, channelData]) {
+    await Promise.allSettled(Object.entries(dataObject).map(async function ([targetChannelID, optionData]) {
+    if (optionData.autoUpdate == true) {
+      let courseCode = optionData.courseCode
+      courseCode = courseCode.slice(0, -1) + (parseInt(courseCode.slice(-1)) + 1).toString()
+      try {
+        await Timetable.fetchCourseData(courseCode)
+      } catch {
+        console.log(`The course '${courseCode}' doesn't seem to exist. Deleting ${targetChannelID} from database.`)
+        return delete dataObject[targetChannelID]
+      }
+      optionData.courseCode = courseCode
+    }
+  }))
+  }
+  writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+}
+
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
-
   const { commandName } = interaction;
 
   if (commandName === 'ping') {
@@ -154,7 +176,7 @@ client.on('interactionCreate', async interaction => {
       const ignoreTutorials = interaction.options.getBoolean('ignoretutorials') || false
       const autoUpdate = interaction.options.getBoolean('autoupdate') || false
       
-      userData[userID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoretutorials': ignoreTutorials, 'autoupdate': autoUpdate}
+      userData[userID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoreTutorials': ignoreTutorials, 'autoUpdate': autoUpdate}
       writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
 
       let infoString = ''
@@ -229,7 +251,7 @@ client.on('interactionCreate', async interaction => {
       const ignoreTutorials = interaction.options.getBoolean('ignoretutorials') || false
       const autoUpdate = interaction.options.getBoolean('autoupdate') || false
       
-      channelData[channelID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoretutorials': ignoreTutorials, 'autoupdate': autoUpdate}
+      channelData[channelID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoreTutorials': ignoreTutorials, 'autoUpdate': autoUpdate}
       writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
 
       let infoString = ''
