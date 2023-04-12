@@ -16,7 +16,6 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
-  timetableUpdate(true)
 });
 
 async function timetableUpdate(nextDay) {
@@ -151,9 +150,10 @@ client.on('interactionCreate', async interaction => {
 
     try {
       courseCode = await Timetable.fetchCourseData(courseCode, 'Name')
-      const nextDay = interaction.options.getBoolean('nextday')
-      const ignoreTutorials = interaction.options.getBoolean('ignoretutorials')
-      const autoUpdate = interaction.options.getBoolean('autoupdate')
+      const nextDay = interaction.options.getBoolean('nextday') || false
+      const ignoreTutorials = interaction.options.getBoolean('ignoretutorials') || false
+      const autoUpdate = interaction.options.getBoolean('autoupdate') || false
+      
       userData[userID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoretutorials': ignoreTutorials, 'autoupdate': autoUpdate}
       writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
 
@@ -178,14 +178,93 @@ client.on('interactionCreate', async interaction => {
     const userID = interaction.user.id
     let { userData } = await JSON.parse(readFileSync('./user-data.json'))
     if (userID in userData) {
-      userData = userData[userID]
+      userData = Object.entries(userData[userID])
+      infoString = ''
+      for ([key, value] of userData) {
+        infoString += `${key}: \`${value}\`\n`
+      }
       const outputEmbed = new Discord.EmbedBuilder()
         .setTitle(`Your info`)
         .setColor('Green')
-        .addFields({"name": `You will receive updates for \`${courseCode}\``, "value": Object.entries(userData)})
+        .addFields({"name": `Please excuse this janky embed :smiling_face_with_tear:`, "value": infoString})
       return await interaction.followUp({embeds: [outputEmbed]})
     } else {
       return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, 'You aren\'t in the database.', '\u200b')]})
+    }
+  }
+
+  if (commandName === 'updatechannel') {
+    await interaction.deferReply({ephemeral: true})
+    const channelID = interaction.channelId
+    let courseCode = interaction.options.getString('course')
+    courseCode ??= ''
+    courseCode = courseCode.toUpperCase()
+    
+    let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
+
+    // If blank, unregister
+    if (courseCode == '') {
+      if (channelID in channelData) {
+        try {
+          delete channelData[userID]
+          writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+        } catch (err) {
+          console.error(err)
+          return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `This channel is in the database, but couldn't be removed`, 'This shouldn\'t happen.')]})
+        }
+        const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle('Successfully unregistered')
+        .setColor('Green')
+        .addFields({"name": `This channel will no longer receive updates`, "value": '\u200b'})
+
+        return await interaction.followUp({embeds: [outputEmbed]})
+      } else {
+          return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, 'This channel is not in the database.', 'There is nothing to remove.')]})
+      }
+    }
+
+    try {
+      courseCode = await Timetable.fetchCourseData(courseCode, 'Name')
+      const nextDay = interaction.options.getBoolean('nextday') || false
+      const ignoreTutorials = interaction.options.getBoolean('ignoretutorials') || false
+      const autoUpdate = interaction.options.getBoolean('autoupdate') || false
+      
+      channelData[channelID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoretutorials': ignoreTutorials, 'autoupdate': autoUpdate}
+      writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+
+      let infoString = ''
+      infoString += nextDay ? 'This channel will receive the timetable the day before at `18:00`.\n' : 'This channel will receive the timetable in the morning at `6:00`.\n'
+      infoString += ignoreTutorials ? 'Tutorials will be filtered from the timetable.\n' : ''
+      infoString += autoUpdate ? `The course code will be updated year-by-year, hopefully.\n` : ''
+
+      const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle('Successfully registered')
+        .setColor('Green')
+        .addFields({"name": `This channel will receive updates for \`${courseCode}\``, "value": infoString})
+
+      return await interaction.followUp({embeds: [outputEmbed]})
+    } catch (err) {
+      return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `The course '\`${courseCode}\`' was not found.`, 'Did you spell it correctly?')]})
+    }
+  }
+
+  if (commandName === "channelinfo") {
+    await interaction.deferReply({ephemeral: true})
+    const channelID = interaction.channelId
+    let { channelData } = await JSON.parse(readFileSync('./user-data.json'))
+    if (channelID in channelData) {
+      channelData = Object.entries(channelData[channelID])
+      infoString = ''
+      for ([key, value] of userData) {
+        infoString += `${key}: \`${value}\`\n`
+      }
+      const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle(`Channel info`)
+        .setColor('Green')
+        .addFields({"name": `Please excuse this janky embed :smiling_face_with_tear:`, "value": infoString})
+      return await interaction.followUp({embeds: [outputEmbed]})
+    } else {
+      return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `This channel isn't in the database.`, '\u200b')]})
     }
   }
 });
@@ -196,7 +275,6 @@ client.on('interactionCreate', async interaction => {
  * @param {Int} offset
  */
 const sendTimetableToChannel = async function (target, courseID, offset, ignoreTutorials) {
-    offset = (offset) ? 1 : 0
     const day = Timetable.fetchDay(offset)
     const dateToFetch = new Date()
     dateToFetch.setDate(dateToFetch.getDate() + offset)

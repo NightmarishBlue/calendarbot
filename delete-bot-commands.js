@@ -45,7 +45,7 @@ function deleteCommand(commandID) {
 async function main() {
     for (let i = 0; i < commandIDs.length; i++){
         deleteCommand(commandJSONArray[i])
-        await time(1000)
+        await time(2000)
     }
 }
 main()

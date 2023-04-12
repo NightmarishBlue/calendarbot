@@ -83,5 +83,38 @@
         "name": "myinfo",
         "type": 1,
         "description": "Check your info in the bot's database."
+    },
+    {
+        "name": "updatechannel",
+        "type": 1,
+        "description": "Register this channel to get updates by DM.",
+        "options": [
+            {
+                "name": "course",
+                "description": "The code for your course, or blank to unregister. Case insensitive.",
+                "type": 3
+            },
+            {
+                "name": "nextday",
+                "description": "Whether or not you want to receive updates the day before.",
+                "type": 5
+            },
+            {
+                "name": "ignoretutorials",
+                "description": "Whether or not you want to see tutorials in your timetable.",
+                "type": 5
+            },
+            {
+                "name": "autoupdate",
+                "description": "Update your course code between years. Will be cleared once you leave, hopefully.",
+                "type": 5
+            }
+        ],
+        "default_member_permissions": "0000000000000018"
+    },
+    {
+        "name": "channelinfo",
+        "type": 1,
+        "description": "Check this channel's info in the bot's database."
     }
 ]

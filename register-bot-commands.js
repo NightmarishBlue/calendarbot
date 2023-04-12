@@ -39,7 +39,7 @@ function registerCommand(command) {
 async function main() {
     for (let i = 0; i < commandJSONArray.length; i++){
         registerCommand(commandJSONArray[i])
-        await time(1000)
+        await time(2000)
     }
 }
 main()
