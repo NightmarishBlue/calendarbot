@@ -233,7 +233,7 @@ client.on('interactionCreate', async interaction => {
     if (courseCode == '') {
       if (channelID in channelData) {
         try {
-          delete channelData[userID]
+          delete channelData[channelID]
           writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
         } catch (err) {
           console.error(err)
