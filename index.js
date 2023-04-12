@@ -1,4 +1,4 @@
-const { readFileSync, writeFileSync } = require('fs')
+const { readFileSync, writeFileSync, existsSync } = require('fs')
 
 const Discord = require('discord.js');
 require('dotenv').config();
@@ -13,6 +13,11 @@ const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMe
 
 client.on('ready', async () => {
   console.log(`${client.user.username} is online!`);
+  // If the file doesn't exist, make it.
+  if (!existsSync('./user-data.json')) {
+    const userData = {}; const channelData = {}
+    writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+  }
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
