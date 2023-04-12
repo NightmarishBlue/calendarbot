@@ -16,34 +16,38 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
+
+  timetableUpdate(true)
 });
 
 async function timetableUpdate(nextDay) {
   let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
 
-  userData = await parseChannels(userData, nextDay, 'user')
-  channelData = await parseChannels(channelData, nextDay, 'channel')
+  userData = await parseData(userData, nextDay, 'user')
+  channelData = await parseData(channelData, nextDay, 'channel')
 
   writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
 }
 
-async function parseChannels(dataObject, nextDay, mode) {
+async function parseData(dataObject, nextDay, mode) {
   // This function iterates over the dict asynchronously
-  // If any errors arrise on an entry, it's removed from the dict
+  // If any errors arrise on an entry, it's removed from the dict. Ignore the catch jank, JS's promise syntax could be better.
   // The new dict is returned, to be written onto the file on disk.
-  await Promise.allSettled(Object.entries(dataObject).map(async ([targetID, optionData]) => {
+  await Promise.allSettled(Object.entries(dataObject).map(async function ([targetChannelID, optionData]) {
+    optionData.nextDay ??= false
     if (optionData.nextDay == nextDay) {
       let targetObject
       try {
         if (mode == 'channel') {
-          targetObject = await client.channels.fetch(targetID)
+          targetObject = await client.channels.fetch(targetChannelID).catch(() => {throw new Error(`Failed to find channel with ID '${targetChannelID}'`)})
         } else {
-          targetObject = await client.users.fetch(targetID)
+          targetObject = await client.users.fetch(targetChannelID).catch(() => {throw new Error(`Failed to find user with ID '${targetChannelID}'`)})
         }
-        sendTimetableToChannel(targetObject, await Timetable.fetchCourseData(optionData.courseCode), 1)
-      } catch {
-        console.error(`Failed to find ${mode} with ID '${targetID}', removing from database.`/*, err*/)
-        delete dataObject[targetID]
+        const courseID = await Timetable.fetchCourseData(optionData.courseCode)
+        sendTimetableToChannel(targetObject, courseID, 1)
+      } catch (err) {
+        console.error(`${err}, removing from database\n`)
+        delete dataObject[targetChannelID]
       }
     }
   }))
@@ -64,7 +68,7 @@ client.on('interactionCreate', async interaction => {
   if (commandName === 'timetable') {
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
     const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/ });
-    if (!courseID) {
+    if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
       await interaction.reply({ embeds: [embed] });
       return
@@ -170,7 +174,7 @@ const sendTimetableToChannel = async function (target, courseID, offset) {
     Timetable.fetchRawTimetableData(courseID, day, dateToFetch)
       .then(async (res) => {
         res = res[0]
-        //if (res.CategoryEvents.length < 1) return
+        if (res.CategoryEvents.length < 1) return
 
         let embed = new Discord.EmbedBuilder()
           .setTitle(`${res.Name} Timetable for ${dateToFetch.toDateString()}`)

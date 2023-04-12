@@ -59,9 +59,8 @@
         "options": [
             {
                 "name": "course",
-                "description": "The code for your course. Case insensitive.",
-                "type": 3,
-                "required": true
+                "description": "The code for your course, or blank to unregister. Case insensitive.",
+                "type": 3
             },
             {
                 "name": "nextday",

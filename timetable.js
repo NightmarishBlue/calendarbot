@@ -89,12 +89,15 @@ async function fetchCourseData(query, data) {
     json: true
   };
 
+  // const output = await fetch(`https://opentimetable.dcu.ie/broker/api/CategoryTypes/${programmeIdentity}/Categories/Filter?pageNumber=1&query=${query}`, reqPayload)
+  //   .then(res => res.json())
+  //   .catch(err => (console.log(err)))
   const output = new Promise(function (resolve, reject) {
     Request(reqPayload) // Send the HTTP Request
       .then(function (res_body) {
         res_body = res_body['Results']
         if (res_body.length == 0) {
-          reject(`Course identity not found with supplied course code '${query}'.`)
+          reject(`Course identity not found with supplied course code '${query}'`)
         } else {
           resolve(res_body[0][data])
         }
@@ -102,7 +105,8 @@ async function fetchCourseData(query, data) {
       .catch(function (err) { // Catch any errors
         reject(err)
       });
-  })
+  }).catch(err => {throw err})
+  // This is why request-promise is deprecated. 🤦
   return output
 }
 
