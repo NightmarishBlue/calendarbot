@@ -49,7 +49,7 @@ function generateTimeRange(errorEmbed, timeRange) {
 // Returns that as a list of embeds.
 async function checkRoom(errorEmbed, roomCodes, timeRange) {
   // roomCodes must be a list of strings
-  // timeRange is a list of two times, start and end, formatted to 'X:XX.'
+  // timeRange is a list of two times, start and end, formatted to 'X:XX'.
   // They should be checked before this function is called.
   const [startTime, endTime] = timeRange
 
