@@ -21,23 +21,31 @@ if (commandIDs[0] === '') {
     exit(1);
 }
 
-commandIDs.forEach(
-    commandID => {
-        fetch(`${URL}\\${commandID}`, {
-            method: 'DELETE',
-            headers: headers
-        }).then(
-            res => {
-                if (res.ok) {
-                    console.log(`Successfully deleted ${commandID}, response ${res.status} (${res.statusText})`)
-                } else {
-                    console.log(`Failed to delete ${commandID}, response ${res.status} (${res.statusText})`)
-                };
-            }
-        ).catch(
-            err => {
-                console.error(`Failed to make request for ${commandID} (${err})`)
-            }
-        )
+const time = ms => new Promise(res => setTimeout(res, ms))
+
+function deleteCommand(commandID) {
+    fetch(`${URL}\\${commandID}`, {
+        method: 'DELETE',
+        headers: headers
+    }).then(
+        res => {
+            if (res.ok) {
+                console.log(`Successfully deleted ${commandID}, response ${res.status} (${res.statusText})`)
+            } else {
+                console.log(`Failed to delete ${commandID}, response ${res.status} (${res.statusText})`)
+            };
+        }
+    ).catch(
+        err => {
+            console.error(`Failed to make request for ${commandID} (${err})`)
+        }
+    )
+}
+
+async function main() {
+    for (let i = 0; i < commandIDs.length; i++){
+        deleteCommand(commandJSONArray[i])
+        await time(1000)
     }
-)
+}
+main()

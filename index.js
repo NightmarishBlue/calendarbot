@@ -16,6 +16,7 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
+  timetableUpdate(true)
 });
 
 async function timetableUpdate(nextDay) {
@@ -41,7 +42,8 @@ async function parseData(dataObject, nextDay, mode) {
           targetObject = await client.users.fetch(targetChannelID).catch(() => {throw new Error(`Failed to find user with ID '${targetChannelID}'`)})
         }
         const courseID = await Timetable.fetchCourseData(optionData.courseCode)
-        sendTimetableToChannel(targetObject, courseID, 1)
+        const offset = optionData.nextDay ? 1 : 0
+        sendTimetableToChannel(targetObject, courseID, offset, optionData.ignoreTutorials)
       } catch (err) {
         console.error(`${err}, removing from database\n`)
         delete dataObject[targetChannelID]
@@ -170,6 +172,22 @@ client.on('interactionCreate', async interaction => {
       return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `The course '\`${courseCode}\`' was not found.`, 'Did you spell it correctly?')]})
     }
   }
+
+  if (commandName === "myinfo") {
+    await interaction.deferReply({ephemeral: true})
+    const userID = interaction.user.id
+    let { userData } = await JSON.parse(readFileSync('./user-data.json'))
+    if (userID in userData) {
+      userData = userData[userID]
+      const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle(`Your info`)
+        .setColor('Green')
+        .addFields({"name": `You will receive updates for \`${courseCode}\``, "value": Object.entries(userData)})
+      return await interaction.followUp({embeds: [outputEmbed]})
+    } else {
+      return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, 'You aren\'t in the database.', '\u200b')]})
+    }
+  }
 });
 
 /**
@@ -177,7 +195,7 @@ client.on('interactionCreate', async interaction => {
  * @param {String} courseID
  * @param {Int} offset
  */
-const sendTimetableToChannel = async function (target, courseID, offset) {
+const sendTimetableToChannel = async function (target, courseID, offset, ignoreTutorials) {
     offset = (offset) ? 1 : 0
     const day = Timetable.fetchDay(offset)
     const dateToFetch = new Date()
@@ -194,10 +212,12 @@ const sendTimetableToChannel = async function (target, courseID, offset) {
         let embed = new Discord.EmbedBuilder()
           .setTitle(`${res.Name} Timetable for ${dateToFetch.toDateString()}`)
           .setColor('Green');
-        embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
-        embed.setDescription(`Times shown are in GMT+1`);
-        
+        try {
+        embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed, ignoreTutorials).setDescription(`Times shown are in GMT+1`)
         target.send({ embeds: [embed] }).catch(console.error);
+        } catch {
+
+        }
       }).catch(console.error());
 }
 

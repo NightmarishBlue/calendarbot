@@ -1,13 +1,16 @@
 const Discord = require('discord.js')
 
 // Sorts and identifies the names of all the events from a list and adds them to the embed.
-function parseEvents(eventList, embed) {
+function parseEvents(eventList, embed, ignoreTutorials) {
+  let finalEventCount = 0
   eventList.sort(function (a, b) {
     var aDate = new Date(a.StartDateTime).getTime(), bDate = new Date(b.StartDateTime).getTime();
     return aDate - bDate;
   });
 
   eventList.forEach(event => {
+    if (ignoreTutorials == true && event.Description.toUpperCase() == 'TUTORIAL') return
+    finalEventCount += 1
     const locations = event.Location.split(', ');
     var locationArray = [];
     locations.forEach(location => {
@@ -20,6 +23,7 @@ function parseEvents(eventList, embed) {
       },
     );
   });
+  if (finalEventCount == 0) return
   return embed
 };
 

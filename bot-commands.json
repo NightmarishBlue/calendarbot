@@ -78,5 +78,10 @@
                 "type": 5
             }
         ]
+    },
+    {
+        "name": "myinfo",
+        "type": 1,
+        "description": "Check your info in the bot's database."
     }
 ]
