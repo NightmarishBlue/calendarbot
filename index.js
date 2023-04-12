@@ -16,8 +16,6 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
-
-  timetableUpdate(true)
 });
 
 async function timetableUpdate(nextDay) {
@@ -34,7 +32,6 @@ async function parseData(dataObject, nextDay, mode) {
   // If any errors arrise on an entry, it's removed from the dict. Ignore the catch jank, JS's promise syntax could be better.
   // The new dict is returned, to be written onto the file on disk.
   await Promise.allSettled(Object.entries(dataObject).map(async function ([targetChannelID, optionData]) {
-    optionData.nextDay ??= false
     if (optionData.nextDay == nextDay) {
       let targetObject
       try {
@@ -60,9 +57,7 @@ client.on('interactionCreate', async interaction => {
   const { commandName } = interaction;
 
   if (commandName === 'ping') {
-    await interaction.reply(
-      'Pong!'
-    );
+    return await interaction.reply('Pong!');
   }
 
   if (commandName === 'timetable') {
@@ -70,8 +65,7 @@ client.on('interactionCreate', async interaction => {
     const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/ });
     if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
-      await interaction.reply({ embeds: [embed] });
-      return
+      return await interaction.reply({ embeds: [embed] });
     };
 
     const shortDay = ['mon', 'tue', 'wed', 'thu', 'fri']
@@ -97,8 +91,7 @@ client.on('interactionCreate', async interaction => {
         res = res[0];
         if (res.CategoryEvents.length < 1) {
           let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for \`${res.Name}\``)
-          await interaction.reply({ embeds: [embed] });
-          return
+          return await interaction.reply({ embeds: [embed] });
         }
 
         let embed = new Discord.EmbedBuilder()
@@ -107,7 +100,7 @@ client.on('interactionCreate', async interaction => {
 
         embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
 
-        await interaction.reply({ embeds: [embed] });
+        return await interaction.reply({ embeds: [embed] });
       });
   }
 
@@ -121,38 +114,60 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'checkrooms') roomCodes = interaction.options.getString('rooms').toUpperCase().split(/\s/);
   
     const embedsToSend = await RoomCheck.checkRoom(errorEmbed, roomCodes, timeRange);
-    await interaction.followUp({ embeds: embedsToSend });
+    return await interaction.followUp({ embeds: embedsToSend });
   }
 
   if (commandName === 'updateme') {
     await interaction.deferReply({ephemeral: true})
     const userID = interaction.user.id
-    let courseCode = interaction.options.getString('course').toUpperCase()
+    let courseCode = interaction.options.getString('course')
+    courseCode ??= ''
+    courseCode = courseCode.toUpperCase()
     
+    let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
+
+    // If blank, unregister
+    if (courseCode == '') {
+      if (userID in userData) {
+        try {
+          delete userData[userID]
+          writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+        } catch (err) {
+          console.error(err)
+          return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `You are in the database, but couldn't be removed`, 'This shouldn\'t happen.')]})
+        }
+        const outputEmbed = new Discord.EmbedBuilder()
+        .setTitle('Successfully unregistered')
+        .setColor('Green')
+        .addFields({"name": `You will no longer receive updates`, "value": '\u200b'})
+
+        return await interaction.followUp({embeds: [outputEmbed]})
+      } else {
+          return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, 'You aren\'t in the database.', 'There is nothing to remove.')]})
+      }
+    }
+
     try {
       courseCode = await Timetable.fetchCourseData(courseCode, 'Name')
-      let { userData, channelData } = await JSON.parse(readFileSync('./user-data.json'))
-
-      userData[userID] = {'courseCode': courseCode}
-    
-      let infoString = ''
-      if (interaction.options.getBoolean('nextday')) {
-        infoString += 'You will receive your timetable the day before at `18:00`.'
-        userData[userID]['nextDay'] = true
-      } else {
-        infoString += 'You will receive your timetable in the morning at `6:00`.'
-      }
-
+      const nextDay = interaction.options.getBoolean('nextday')
+      const ignoreTutorials = interaction.options.getBoolean('ignoretutorials')
+      const autoUpdate = interaction.options.getBoolean('autoupdate')
+      userData[userID] = {'courseCode': courseCode, 'nextDay': nextDay, 'ignoretutorials': ignoreTutorials, 'autoupdate': autoUpdate}
       writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
+
+      let infoString = ''
+      infoString += nextDay ? 'You will receive your timetable the day before at `18:00`.\n' : 'You will receive your timetable in the morning at `6:00`.\n'
+      infoString += ignoreTutorials ? 'Tutorials will be filtered from your timetable.\n' : ''
+      infoString += autoUpdate ? `Your course code will be updated year-by-year, hopefully.\n` : ''
 
       const outputEmbed = new Discord.EmbedBuilder()
         .setTitle('Successfully registered')
         .setColor('Green')
         .addFields({"name": `You will receive updates for \`${courseCode}\``, "value": infoString})
 
-      await interaction.followUp({embeds: [outputEmbed]})
-    } catch {
-      await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `The course '\`${courseCode}\`' was not found.`, 'Did you spell it correctly?')]})
+      return await interaction.followUp({embeds: [outputEmbed]})
+    } catch (err) {
+      return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `The course '\`${courseCode}\`' was not found.`, 'Did you spell it correctly?')]})
     }
   }
 });

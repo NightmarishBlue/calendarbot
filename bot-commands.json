@@ -71,6 +71,11 @@
                 "name": "ignoretutorials",
                 "description": "Whether or not you want to see tutorials in your timetable.",
                 "type": 5
+            },
+            {
+                "name": "autoupdate",
+                "description": "Update your course code between years. Will be cleared once you leave, hopefully.",
+                "type": 5
             }
         ]
     }
