@@ -74,7 +74,7 @@
             },
             {
                 "name": "autoupdate",
-                "description": "Update your course code between years. Will be cleared once you leave, hopefully.",
+                "description": "Update your course code between years. Will be cleared once you leave.",
                 "type": 5
             }
         ]
@@ -91,7 +91,7 @@
         "options": [
             {
                 "name": "course",
-                "description": "The code for your course, or blank to unregister. Case insensitive.",
+                "description": "The code for the course, or blank to unregister. Case insensitive.",
                 "type": 3
             },
             {
@@ -101,12 +101,12 @@
             },
             {
                 "name": "ignoretutorials",
-                "description": "Whether or not you want to see tutorials in your timetable.",
+                "description": "Whether or not you want to see tutorials in the timetable.",
                 "type": 5
             },
             {
                 "name": "autoupdate",
-                "description": "Update your course code between years. Will be cleared once you leave, hopefully.",
+                "description": "Update the course code between years. Will be cleared once it ends.",
                 "type": 5
             }
         ],

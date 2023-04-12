@@ -16,7 +16,7 @@ client.on('ready', async () => {
 
   scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
-  updateCourseIDs()
+  scheduler.scheduleJob('0 0 1 9 *', () => {updateCourseIDs()})
 });
 
 // The daily update function
@@ -181,8 +181,8 @@ client.on('interactionCreate', async interaction => {
 
       let infoString = ''
       infoString += nextDay ? 'You will receive your timetable the day before at `18:00`.\n' : 'You will receive your timetable in the morning at `6:00`.\n'
-      infoString += ignoreTutorials ? 'Tutorials will be filtered from your timetable.\n' : ''
-      infoString += autoUpdate ? `Your course code will be updated year-by-year, hopefully.\n` : ''
+      infoString += ignoreTutorials ? `Tutorials will be filtered from your timetable, provided they're set right in the event data.\n` : ''
+      infoString += autoUpdate ? `Your course code will be updated year-by-year.\n` : ''
 
       const outputEmbed = new Discord.EmbedBuilder()
         .setTitle('Successfully registered')
@@ -256,8 +256,8 @@ client.on('interactionCreate', async interaction => {
 
       let infoString = ''
       infoString += nextDay ? 'This channel will receive the timetable the day before at `18:00`.\n' : 'This channel will receive the timetable in the morning at `6:00`.\n'
-      infoString += ignoreTutorials ? 'Tutorials will be filtered from the timetable.\n' : ''
-      infoString += autoUpdate ? `The course code will be updated year-by-year, hopefully.\n` : ''
+      infoString += ignoreTutorials ? `Tutorials will be filtered from the timetable, provided they're set right in the event data.\n` : ''
+      infoString += autoUpdate ? `The course code will be updated year-by-year.\n` : ''
 
       const outputEmbed = new Discord.EmbedBuilder()
         .setTitle('Successfully registered')
