@@ -282,13 +282,13 @@ client.on('interactionCreate', async interaction => {
     if (channelID in channelData) {
       channelData = Object.entries(channelData[channelID])
       infoString = ''
-      for ([key, value] of userData) {
+      for ([key, value] of channelData) {
         infoString += `${key}: \`${value}\`\n`
       }
       const outputEmbed = new Discord.EmbedBuilder()
         .setTitle(`Channel info`)
         .setColor('Green')
-        .addFields({"name": `Please excuse this janky embed :smiling_face_with_tear:`, "value": infoString})
+        .addFields({"name": `Please excuse this ugly embed :smiling_face_with_tear:`, "value": infoString})
       return await interaction.followUp({embeds: [outputEmbed]})
     } else {
       return await interaction.followUp({embeds: [DiscordFunctions.buildErrorEmbed(commandName, `This channel isn't in the database.`, '\u200b')]})
