@@ -1,5 +1,5 @@
 # calendarbot
-A Discord bot for the [opentimetable](https://opentimetable.dcu.ie/) system. 
+A Discord bot for the [mytimetable](https://mytimetable.dcu.ie/) system. 
 ## Get started
 Fill in `.env` with the variables `BOT_TOKEN`, `APPLICATION_ID` and `GUILD_ID` (optionally, if you want to register guild commands). Then run `register-bot-commands.js`.
 
