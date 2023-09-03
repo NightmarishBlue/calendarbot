@@ -52,40 +52,42 @@ function startOfWeek(dateToFetch) {
 
 // Takes the JSON file and edits it according to the arguments, so it can be used for requests.
 // Identities can be a single string or a list, start and end time must be strings (like 8:00)
-function constructRequestBody(day, dateToFetch, identities, startTime, endTime) {
-  let requestBodyTemplate = require('./body.json')
+// whoops, everythings been changed. thats all part of the end point now. 
+function constructRequestBody(day, dateToFetch, identities, startTime, endTime, identityType) {
+  let requestBodyTemplate = require('./new_body.json')
 
   if (typeof (identities) == 'string') {
     identities = [identities]
   };
 
-  finalDayNumber = weekdays.indexOf(day)
+  // finalDayNumber = weekdays.indexOf(day)
 
-  requestBodyTemplate['ViewOptions']['Weeks'][0]['FirstDayInWeek'] = startOfWeek(dateToFetch)
-  requestBodyTemplate['ViewOptions']['Days'][0]['Name'] = day
-  requestBodyTemplate['ViewOptions']['Days'][0]['DayOfWeek'] = finalDayNumber
+  // requestBodyTemplate['ViewOptions']['Weeks'][0]['FirstDayInWeek'] = startOfWeek(dateToFetch)
+  // requestBodyTemplate['ViewOptions']['Days'][0]['Name'] = day
+  // requestBodyTemplate['ViewOptions']['Days'][0]['DayOfWeek'] = finalDayNumber
 
-  if (typeof (startTime) == 'string') {
-    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = startTime
-    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = endTime
-  } else {
-    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = '8:00'
-    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = '22:00'
-  };
+  // if (typeof (startTime) == 'string') {
+  //   requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = startTime
+  //   requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = endTime
+  // } else {
+  //   requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = '8:00'
+  //   requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = '22:00'
+  // };
 
   //console.log(requestBodyTemplate['ViewOptions']['TimePeriods'])
-  requestBodyTemplate['CategoryIdentities'] = identities
+  requestBodyTemplate['CategoryTypesWithIdentities']["CategoryIdentities"] = identities;
   return requestBodyTemplate
 }
 
 // Makes a search on opentimetable for a keyword and returns the first courses result's identity
-// If data is defined, grab that instead, such as 'Name'
+// If data is defined, we can grab that instead, such as 'Name'
 async function fetchCourseData(query, data) {
   data ??= 'Identity'
   var reqPayload = {
     method: 'POST',
-    uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${programmeIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
-    headers: reqHeaders,
+    uri: `https://scientia-eu-v4-api-d1-03.azurewebsites.net/api/Public/CategoryTypes/${programmeIdentity}/Categories/FilterWithCache/a1fdee6b-68eb-47b8-b2ac-a4c60c8e6177?pageNumber=1&query=${query}`,
+    //uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${programmeIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
+    //headers: reqHeaders,
     json: true
   };
 
@@ -111,7 +113,7 @@ async function fetchCourseData(query, data) {
 }
 
 // This gets the raw timetable data for a given block of time. Feed it the identities, not the codes.
-async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new Date(), mode, startTime, endTime) {
+async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new Date(), mode, startDate, endDate) {
   /*  two modes, 'programme' and 'location'. programme is the default.
       programme expects one string or a list with one string, location can take a list of any size.
       times are set to 8:00 - 22:00 if startTime is not defined. */
@@ -124,9 +126,11 @@ async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new D
   let output = new Promise(function (resolve, reject) {
     const reqPayload = {
       method: 'POST',
-      uri: `https://opentimetable.dcu.ie/broker/api/categoryTypes/${categoryIdentity}/categories/events/filter`,
-      headers: reqHeaders,
-      body: constructRequestBody(day, dateToFetch, identitiesToQuery, startTime, endTime),
+      uri: `
+      https://scientia-eu-v4-api-d1-03.azurewebsites.net/api/Public/CategoryTypes/Categories/Events/Filter/a1fdee6b-68eb-47b8-b2ac-a4c60c8e6177?startRange=${startDate}&endRange=${endDate}`,
+      //uri: `https://opentimetable.dcu.ie/broker/api/categoryTypes/${categoryIdentity}/categories/events/filter`,
+      //headers: reqHeaders,
+      body: constructRequestBody(day, dateToFetch, identitiesToQuery),
       json: true
     };
 
@@ -153,6 +157,7 @@ async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new D
 }
 
 // Starts a search from a module code, and returns the title of the first result
+// unnecessary, since now the result does everything.
 async function fetchModuleNameFromCode(query) {
   var reqPayload = {
     method: 'POST',

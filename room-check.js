@@ -23,7 +23,8 @@ function findRoomIdentities(codesToQuery) {
 // Ensuring the times are correct is a depressingly difficult task.
 // This function does that, adding errors to an embed.
 function generateTimeRange(errorEmbed, timeRange) {
-  const currentTime = new Date().getHours();
+  let date = new Date();
+  const currentTime = date.getHours();
   const defaultTimes = [currentTime, (currentTime + 1) % 24]
   try {
     timeRange = timeRange.split(/\s/);
@@ -40,18 +41,22 @@ function generateTimeRange(errorEmbed, timeRange) {
     if (endHour != undefined) errorEmbed.addErrorField('Given end hour was invalid.', 'Set to an hour ahead of start time.');
     endHour = (parseInt(startHour) + 1) % 24;
   }
-
-  return [errorEmbed, [Timetable.timeToString(startHour), Timetable.timeToString(endHour)]]
+  date.setHours(startHour)
+  const startDate = date.toISOString()
+  date.setHours(endHour)
+  const endDate = date.toISOString()
+  return [errorEmbed, [Timetable.timeToString(startHour), Timetable.timeToString(endHour)], [startDate, endDate]]
 }
 
 
 // Checks a set of rooms for a one hour period
 // Returns that as a list of embeds.
-async function checkRoom(errorEmbed, roomCodes, timeRange) {
+async function checkRoom(errorEmbed, roomCodes, timeRange, timeObjects) {
   // roomCodes must be a list of strings
   // timeRange is a list of two times, start and end, formatted to 'X:XX'.
   // They should be checked before this function is called.
   const [startTime, endTime] = timeRange
+  const [startDate, endDate] = timeObjects
 
   const inputCodes = findRoomIdentities(roomCodes);
   const validRooms = Object.values(inputCodes[0]);
@@ -69,8 +74,10 @@ async function checkRoom(errorEmbed, roomCodes, timeRange) {
     .setColor('Green')
     .setTitle(`Checking rooms for ${startTime} - ${endTime}`);
 
-  await Timetable.fetchRawTimetableData(validRooms, Timetable.fetchDay(), new Date(), 'location', startTime, endTime)
+  await Timetable.fetchRawTimetableData(validRooms, Timetable.fetchDay(), new Date(), 'location', startDate, endDate)
+  // they may have changed how these responses look.
     .then(async (res) => {
+      res = res.CategoryEvents
       let freeRooms = []
       let foundEvents = {}
 

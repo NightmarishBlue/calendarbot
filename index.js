@@ -90,7 +90,8 @@ client.on('interactionCreate', async interaction => {
 
   if (commandName === 'timetable') {
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
-    const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/ });
+    const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {console.error(err) });
+    console.log(courseCode, courseID)
     if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
       return await interaction.reply({ embeds: [embed] });
@@ -113,12 +114,15 @@ client.on('interactionCreate', async interaction => {
         day = day.charAt(0).toUpperCase() + day.slice(1)
       }
     }
-    
-    Timetable.fetchRawTimetableData(courseID, day, new Date(), 'programme', '8:00', '22:00')
+    let dateObject = new Date()
+    dateObject.setHours(8)
+    let startDate = dateObject.toISOString()
+    dateObject.setHours(22)
+    let endDate = dateObject.toISOString()
+    Timetable.fetchRawTimetableData(courseID, day, dateObject, 'programme', startDate, endDate)
       .then(async (res) => {
-        res = res[0];
         if (res.CategoryEvents.length < 1) {
-          let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for \`${res.Name}\``)
+          let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for \`${res.Name ?? courseCode}\``)
           return await interaction.reply({ embeds: [embed] });
         }
 
@@ -126,7 +130,7 @@ client.on('interactionCreate', async interaction => {
           .setTitle(`${res.Name} timetable for ${day}`)
           .setColor('Green');
 
-        embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
+        embed = DiscordFunctions.parseEvents(res.CategoryEvents.Results, embed)
 
         return await interaction.reply({ embeds: [embed] });
       });
@@ -136,12 +140,12 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply();
     let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
     let timeRange = interaction.options.getString('times');
-    [errorEmbed, timeRange] = RoomCheck.generateTimeRange(errorEmbed, timeRange)
+    [errorEmbed, timeRange, timeRangeISO] = RoomCheck.generateTimeRange(errorEmbed, timeRange)
 
     let roomCodes = ['LG25', 'LG26', 'LG27', 'L101', 'L114', 'L125', 'L128', 'L129'];
     if (commandName === 'checkrooms') roomCodes = interaction.options.getString('rooms').toUpperCase().split(/\s/);
   
-    const embedsToSend = await RoomCheck.checkRoom(errorEmbed, roomCodes, timeRange);
+    const embedsToSend = await RoomCheck.checkRoom(errorEmbed, roomCodes, timeRange, timeRangeISO);
     return await interaction.followUp({ embeds: embedsToSend });
   }
 

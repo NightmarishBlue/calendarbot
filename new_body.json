@@ -1,0 +1,62 @@
+{
+    "ViewOptions": {
+        "Days": [
+            {
+                "Name": "Monday",
+                "DayOfWeek": 1,
+                "IsDefault": true
+            },
+            {
+                "Name": "Tuesday",
+                "DayOfWeek": 2,
+                "IsDefault": true
+            },
+            {
+                "Name": "Wednesday",
+                "DayOfWeek": 3,
+                "IsDefault": true
+            },
+            {
+                "Name": "Thursday",
+                "DayOfWeek": 4,
+                "IsDefault": true
+            },
+            {
+                "Name": "Friday",
+                "DayOfWeek": 5,
+                "IsDefault": true
+            }
+        ],
+        "Weeks": [],
+        "TimePeriods": [
+            {
+                "Description": "All Day",
+                "StartTime": "00:00",
+                "EndTime": "23:59",
+                "IsDefault": true
+            }
+        ],
+        "DatePeriods": [
+            {
+                "Description": "This Week",
+                "StartDateTime": "2023-09-11T00:00:00+00:00",
+                "EndDateTime": "2024-09-08T00:00:00+00:00",
+                "IsDefault": true,
+                "Type": null,
+                "Weeks": [
+                ]
+            }
+        ]
+    },
+    "CategoryTypesWithIdentities": [
+        {
+            "CategoryTypeIdentity": "this is whether its a programme, module or room",
+            "CategoryIdentities": [
+                "the ID of said thing"
+            ]
+        }
+    ],
+    "FetchBookings": false,
+    "FetchPersonalEvents": false,
+    "PersonalIdentities": []
+}
