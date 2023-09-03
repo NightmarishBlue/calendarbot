@@ -91,7 +91,7 @@ client.on('interactionCreate', async interaction => {
   if (commandName === 'timetable') {
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
     const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {console.error(err) });
-    console.log(courseCode, courseID)
+
     if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
       return await interaction.reply({ embeds: [embed] });
@@ -114,23 +114,25 @@ client.on('interactionCreate', async interaction => {
         day = day.charAt(0).toUpperCase() + day.slice(1)
       }
     }
-    let dateObject = new Date()
+    let dateObject = new Date('2023-09-11')
     dateObject.setHours(8)
     let startDate = dateObject.toISOString()
     dateObject.setHours(22)
     let endDate = dateObject.toISOString()
-    Timetable.fetchRawTimetableData(courseID, day, dateObject, 'programme', startDate, endDate)
+
+    Timetable.fetchRawTimetableData(courseID, startDate, endDate, 'programme')
       .then(async (res) => {
-        if (res.CategoryEvents.length < 1) {
+        res = res.CategoryEvents[0]
+        if (res.Results < 1) {
           let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for \`${res.Name ?? courseCode}\``)
           return await interaction.reply({ embeds: [embed] });
         }
 
         let embed = new Discord.EmbedBuilder()
-          .setTitle(`${res.Name} timetable for ${day}`)
+          .setTitle(`${res.Name ?? courseCode} timetable for ${day}`)
           .setColor('Green');
 
-        embed = DiscordFunctions.parseEvents(res.CategoryEvents.Results, embed)
+        embed = DiscordFunctions.parseEvents(res.Results, embed)
 
         return await interaction.reply({ embeds: [embed] });
       });
@@ -309,17 +311,21 @@ const sendTimetableToChannel = async function (target, courseID, offset, ignoreT
     const day = Timetable.fetchDay(offset)
     const dateToFetch = new Date()
     dateToFetch.setDate(dateToFetch.getDate() + offset)
+    dateToFetch.setHours(8)
+    const startDate = dateToFetch.toISOString()
+    dateToFetch.setHours(8)
+    const endDate = dateToFetch.toISOString()
     // not sure of the best way to deal with the nested promise causing an unhandled error, but this one works.
     // let courseID
     // try {courseID = await Timetable.fetchCourseData(courseCode)} catch {return true}
 
-    Timetable.fetchRawTimetableData(courseID, day, dateToFetch)
+    Timetable.fetchRawTimetableData(courseID, startDate, endDate, 'programme')
       .then(async (res) => {
-        res = res[0]
-        if (res.CategoryEvents.length < 1) return
+        res = res.CategoryEvents[0]
+        if (res.length < 1) return
 
         let embed = new Discord.EmbedBuilder()
-          .setTitle(`${res.Name} Timetable for ${dateToFetch.toDateString()}`)
+          .setTitle(`${res.Name ?? courseID} Timetable for ${dateToFetch.toDateString()}`)
           .setColor('Green');
         try {
         embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed, ignoreTutorials).setDescription(`Times shown are in GMT+1`)

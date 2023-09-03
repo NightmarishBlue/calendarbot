@@ -74,7 +74,7 @@ async function checkRoom(errorEmbed, roomCodes, timeRange, timeObjects) {
     .setColor('Green')
     .setTitle(`Checking rooms for ${startTime} - ${endTime}`);
 
-  await Timetable.fetchRawTimetableData(validRooms, Timetable.fetchDay(), new Date(), 'location', startDate, endDate)
+  await Timetable.fetchRawTimetableData(validRooms, startDate, endDate, 'location')
   // they may have changed how these responses look.
     .then(async (res) => {
       res = res.CategoryEvents
@@ -83,7 +83,7 @@ async function checkRoom(errorEmbed, roomCodes, timeRange, timeObjects) {
 
       res.forEach(roomObject => {
         let roomName = roomObject.Name.split('.')[1]
-        let events = roomObject.CategoryEvents
+        let events = roomObject.Results
 
         if (events.length > 0) {
           foundEvents[roomName] = []
