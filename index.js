@@ -114,7 +114,7 @@ client.on('interactionCreate', async interaction => {
         day = day.charAt(0).toUpperCase() + day.slice(1)
       }
     }
-    let dateObject = new Date('2023-09-11')
+    let dateObject = new Date()
     dateObject.setHours(8)
     let startDate = dateObject.toISOString()
     dateObject.setHours(22)
