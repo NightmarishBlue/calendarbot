@@ -16,9 +16,11 @@ function parseEvents(eventList, embed, ignoreTutorials) {
     locations.forEach(location => {
       locationArray.push(location.split('.')[1]);
     })
+    let eventName = event.Name
+    if (event.ExtraProperties[0].Name == 'Module Name') eventName = event.ExtraProperties[0].Value;
     embed.addFields(
       {
-        name: `${event.Name} (${event.Description})`,
+        name: `${eventName} (${event.Description})`,
         value: `Time: ${new Date(event.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(event.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`
       },
     );
