@@ -19,8 +19,8 @@ client.on('ready', async () => {
     writeFileSync('./user-data.json', JSON.stringify({ userData, channelData }, null, 2))
   }
 
-  scheduler.scheduleJob('0 6 * *', () => {timetableUpdate(false)})
-  scheduler.scheduleJob('0 18 * *', () => {timetableUpdate(true)})
+  scheduler.scheduleJob('0 6 * * *', () => {timetableUpdate(false)})
+  scheduler.scheduleJob('38 21 * * *', () => {timetableUpdate(true)})
   scheduler.scheduleJob('0 0 1 9 *', () => {updateCourseIDs()})
 });
 
