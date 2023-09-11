@@ -20,7 +20,7 @@ client.on('ready', async () => {
   }
 
   scheduler.scheduleJob('0 6 * * *', () => {timetableUpdate(false)})
-  scheduler.scheduleJob('38 21 * * *', () => {timetableUpdate(true)})
+  scheduler.scheduleJob('0 21 * * *', () => {timetableUpdate(true)})
   scheduler.scheduleJob('0 0 1 9 *', () => {updateCourseIDs()})
 });
 
