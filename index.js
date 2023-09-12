@@ -91,12 +91,12 @@ client.on('interactionCreate', async interaction => {
   if (commandName === 'timetable') {
     await interaction.deferReply()
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
-    const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {console.error(err) });
+    const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/});
     // this seems to take a while. perhaps we should cache these.
 
     if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
-      return await interaction.reply({ embeds: [embed] });
+      return await interaction.followUp({ embeds: [embed] });
     };
 
     const shortDay = ['mon', 'tue', 'wed', 'thu', 'fri']
