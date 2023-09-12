@@ -106,7 +106,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.options.getString('day') || interaction.options.getString('course').split(' ')[1]) {
       day = interaction.options.getString('day') || interaction.options.getString('course').split(' ')[1];
       day = day.toLowerCase()
-      if (!shortDay.includes(day) && !longDay.includes(day)) return await interaction.followUp({ content: 'Please include a valid day'});
+      if (!shortDay.includes(day) && !longDay.includes(day)) return await interaction.followUp({ content: `\`${day}\` doesn't seem to be a valid day.`});
 
       if (day.length > 3) {
         day = longDay.find(toFind => toFind == day)
