@@ -21,7 +21,7 @@ function parseEvents(eventList, embed, ignoreTutorials) {
     embed.addFields(
       {
         name: `${eventName} (${event.Description})`,
-        value: `Time: ${new Date(event.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(event.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`
+        value: `Time: \`${new Date(event.StartDateTime).toLocaleTimeString().slice(0, 5)}\` - \`${new Date(event.EndDateTime).toLocaleTimeString().slice(0, 5)}\`\nLocation: ${locationArray.join(', ')}`
       },
     );
   });
