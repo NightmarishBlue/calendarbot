@@ -11,7 +11,7 @@ function parseEvents(eventList, embed, ignoreTutorials) {
   eventList.forEach(event => {
     if (ignoreTutorials == true && event.Description.toUpperCase() == 'TUTORIAL') return
     finalEventCount += 1
-    const locations = event.Location.split(', ');
+    const locations = (event.Location != null) ? event.Location.split(', ') : [];
     var locationArray = [];
     locations.forEach(location => {
       locationArray.push(location.split('.')[1]);
