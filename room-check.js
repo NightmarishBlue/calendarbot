@@ -89,7 +89,9 @@ async function checkRoom(errorEmbed, roomCodes, timeRange, timeObjects) {
           foundEvents[roomName] = []
           events.forEach(
             event => {
-              foundEvents[roomName].push(`\`${event.StartDateTime.slice(11, 16)} - ${event.EndDateTime.slice(11, 16)}\` ${event.Name}`)
+              const startDate = new Date(event.StartDateTime)
+              const endDate = new Date(event.EndDateTime)
+              foundEvents[roomName].push(`\`${Timetable.extractTimeFromDate(startDate)}\` - \`${Timetable.extractTimeFromDate(endDate)}\` ${event.Name}`)
             }
           )
           foundEvents[roomName] = foundEvents[roomName].sort()

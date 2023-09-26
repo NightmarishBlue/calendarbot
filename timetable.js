@@ -19,8 +19,8 @@ function fetchDay(offset) {
 // Gets current time in the syntax '2:24'. JS apparently doesn't have a native function for this.
 function extractTimeFromDate(DateObject = new Date(),) {
   const hour = DateObject.getHours();
-  const minute = DateObject.getMinutes();
-  return (hour + ':' + minute)
+  const minute = DateObject.getMinutes() + "0";
+  return (hour + ':' + minute.slice(0, 2))
 };
 
 // Convert an existing hour to 'XX:XX' syntax
