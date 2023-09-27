@@ -2,6 +2,8 @@ const Discord = require('discord.js')
 const DiscordFunctions = require('./discord-functions.js')
 const Timetable = require('./timetable.js')
 
+const roomMaxEventNameSize = Math.floor(DiscordFunctions.maxEventNameSize / 3);
+
 // Grabs the room IDs of a list of codes, using a JSON file.
 // It might be better to query them all instead.
 function findRoomIdentities(codesToQuery) {
@@ -89,9 +91,17 @@ async function checkRoom(errorEmbed, roomCodes, timeRange, timeObjects) {
           foundEvents[roomName] = []
           events.forEach(
             event => {
+              let eventName = event.Name;
+              event.ExtraProperties.some(propObject => {
+                if (propObject.Name == 'Module Name') {
+                  eventName = propObject.Value
+                  return true;
+                }
+              });
+              if (eventName.length > roomMaxEventNameSize) eventName = eventName.slice(0, roomMaxEventNameSize) + "…";
               const startDate = new Date(event.StartDateTime)
               const endDate = new Date(event.EndDateTime)
-              foundEvents[roomName].push(`\`${Timetable.extractTimeFromDate(startDate)}\` - \`${Timetable.extractTimeFromDate(endDate)}\` ${event.Name}`)
+              foundEvents[roomName].push(`\`${Timetable.extractTimeFromDate(startDate)}\` - \`${Timetable.extractTimeFromDate(endDate)}\` ${eventName}`)
             }
           )
           foundEvents[roomName] = foundEvents[roomName].sort()

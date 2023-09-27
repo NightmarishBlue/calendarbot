@@ -1,5 +1,7 @@
 const Discord = require('discord.js')
 
+const maxEventNameSize = 48;
+
 // Sorts and identifies the names of all the events from a list and adds them to the embed.
 function parseEvents(eventList, embed, ignoreTutorials) {
   let finalEventCount = 0
@@ -17,7 +19,13 @@ function parseEvents(eventList, embed, ignoreTutorials) {
       locationArray.push(location.split('.')[1]);
     })
     let eventName = event.Name
-    if (event.ExtraProperties[0].Name == 'Module Name') eventName = event.ExtraProperties[0].Value;
+    event.ExtraProperties.some(propObject => {
+      if (propObject.Name == 'Module Name') {
+        eventName = propObject.Value
+        return true;
+      }
+    });
+    if (eventName.length > maxEventNameSize) eventName = eventName.slice(0, maxEventNameSize) + "…";
     embed.addFields(
       {
         name: `${eventName} (${event.Description})`,
@@ -51,7 +59,7 @@ function buildErrorEmbed(commandName, fieldTitle, fieldValue) {
 };
 
 exported = {
-  parseEvents, buildErrorEmbed
+  parseEvents, buildErrorEmbed, maxEventNameSize
 };
 
 module.exports = exported;
