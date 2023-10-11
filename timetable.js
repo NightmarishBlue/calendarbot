@@ -109,6 +109,9 @@ async function fetchRawTimetableData(identitiesToQuery, startDate, endDate, mode
     mode = 'programme';
   };
 
+  // have to make sure an event beginning at the exact end time doesn't show up
+  endDate.setMinutes(endDate.getMinutes() - 1);
+
   const categoryIdentity = (mode == 'programme') ? programmeIdentity : locationIdentity;
 
   let output = new Promise(function (resolve, reject) {
