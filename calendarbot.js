@@ -122,9 +122,9 @@ client.on('interactionCreate', async interaction => {
     // offset the date as is appropriate.
     // offset is the diff between the current day and the day we want.
     dateObject.setDate(dateObject.getDate() - offset)
-    dateObject.setHours(8)
+    dateObject.setHours(8, 0, 0, 0)
     let startDate = dateObject.toISOString()
-    dateObject.setHours(22)
+    dateObject.setHours(22, 0, 0, 0)
     let endDate = dateObject.toISOString()
 
     Timetable.fetchRawTimetableData(courseID, startDate, endDate, 'programme')

@@ -104,22 +104,22 @@ async function fetchCourseData(query, data) {
 async function fetchRawTimetableData(identitiesToQuery, startDate, endDate, mode) {
   /*  two modes, 'programme' and 'location'. programme is the default.
       programme expects one string or a list with one string, location can take a list of any size.
-      times are set to 8:00 - 22:00 if startTime is not defined. */
+    */
   if (typeof (mode) != 'string') {
     mode = 'programme';
   };
 
   // have to make sure an event beginning at the exact end time doesn't show up
-  endDate.setMinutes(endDate.getMinutes() - 1);
+  endDate = await new Date(endDate);
+  endDate.setMinutes(-1)
+  endDate = await endDate.toISOString()
 
   const categoryIdentity = (mode == 'programme') ? programmeIdentity : locationIdentity;
-
-  let output = new Promise(function (resolve, reject) {
+ 
+  let output = await new Promise(function (resolve, reject) {
     const reqPayload = {
       method: 'POST',
       uri: `https://scientia-eu-v4-api-d1-03.azurewebsites.net/api/Public/CategoryTypes/Categories/Events/Filter/a1fdee6b-68eb-47b8-b2ac-a4c60c8e6177?startRange=${startDate}&endRange=${endDate}`,
-      //uri: `https://opentimetable.dcu.ie/broker/api/categoryTypes/${categoryIdentity}/categories/events/filter`,
-      //headers: reqHeaders,
       body: constructRequestBody(identitiesToQuery, mode),
       json: true
     };
@@ -139,7 +139,6 @@ async function fetchRawTimetableData(identitiesToQuery, startDate, endDate, mode
         resolve(res_body)
       })
       .catch(function (err) { // Catch any errors
-        //console.error(err)
         reject(err)
       });
   })
@@ -148,33 +147,33 @@ async function fetchRawTimetableData(identitiesToQuery, startDate, endDate, mode
 
 // Starts a search from a module code, and returns the title of the first result
 // unnecessary, since now the result does everything.
-async function fetchModuleNameFromCode(query) {
-  var reqPayload = {
-    method: 'POST',
-    uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${moduleIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
-    headers: reqHeaders,
-    json: true
-  };
+// async function fetchModuleNameFromCode(query) {
+//   var reqPayload = {
+//     method: 'POST',
+//     uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${moduleIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
+//     headers: reqHeaders,
+//     json: true
+//   };
 
-  return new Promise(function (resolve, reject) {
-    Request(reqPayload) // Send the HTTP Request
-      .then(function (res_body) {
-        let results = res_body['Results'];
+//   return new Promise(function (resolve, reject) {
+//     Request(reqPayload) // Send the HTTP Request
+//       .then(function (res_body) {
+//         let results = res_body['Results'];
 
-        if (results.length == 0) {
-          reject(`Module identity not found with supplied module code '${query}'.`);
-        } else {
-          resolve(res_body['Results'][0]['Name']);
-        }
-      })
-      .catch(function (err) { // Catch any errors
-        reject(err);
-      });
-  });
-}
+//         if (results.length == 0) {
+//           reject(`Module identity not found with supplied module code '${query}'.`);
+//         } else {
+//           resolve(res_body['Results'][0]['Name']);
+//         }
+//       })
+//       .catch(function (err) { // Catch any errors
+//         reject(err);
+//       });
+//   });
+// }
 
 exported = {
-  weekdays, fetchDay, extractTimeFromDate, timeToString,reqHeaders, startOfWeek, constructRequestBody, fetchCourseData, fetchRawTimetableData, fetchModuleNameFromCode
+  weekdays, fetchDay, extractTimeFromDate, timeToString,reqHeaders, startOfWeek, constructRequestBody, fetchCourseData, fetchRawTimetableData
 }
 
 module.exports = exported

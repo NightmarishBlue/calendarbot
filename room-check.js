@@ -26,6 +26,7 @@ function findRoomIdentities(codesToQuery) {
 // This function does that, adding errors to an embed.
 function generateTimeRange(errorEmbed, timeRange) {
   let date = new Date();
+  date.setHours(date.getHours(), 0, 0, 0); // make sure the hour's on the dot.
   const currentTime = date.getHours();
   const defaultTimes = [currentTime, (currentTime + 1) % 24]
   try {
