@@ -1,47 +1,64 @@
+const { REST, Routes } = require("discord.js");
 require('dotenv').config();
 
-const guildRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/guilds/' + process.env.GUILD_ID + '/commands'
-const appRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/commands'
+const meEndpoint = "https://discordapp.com/api/oauth2/applications/@me"; // endpoint used to get bot's own info
+
+let appId = process.env.APPLICATION_ID;
+let guildId = process.env.GUILD_ID;
+
+const commandJSONArray = require('./bot-commands.json')
+if (!(process.env.BOT_TOKEN)) {
+    console.error("Error: $BOT_TOKEN is unset");
+    return 1;
+}
+
 const headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bot ' + process.env.BOT_TOKEN
 }
 
 const mode = (process.argv.includes('-g')) && 'guild' || 'app';
-if (process.argv.length < 3) console.error('No commandline arguments specified, defaulting to application.\nUse -a to specify application, and -g to specify guild.');
-(mode == 'guild') && console.log(`Registering commands to guild`) || console.log(`Registering application commands, remember that Discord rate limits this`);
-
-const URL = (mode == 'app') ? appRegisterURL : guildRegisterURL;
-const commandJSONArray = require('./bot-commands.json')
-
-const time = ms => new Promise(res => setTimeout(res, ms))
-
-function registerCommand(command) {
-    fetch(URL, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(command)
-    }).then(
-        res => {
-            if (res.ok) {
-                console.log(`Successfully registered ${command.name}, response ${res.status} (${res.statusText})`)
-            } else {
-                console.log(`Failed to register ${command.name}, response ${res.status} (${res.statusText})\n${res.text}`)
-            };
-        }
-    ).catch(
-        err => {
-            console.error(`Failed to make request for ${command.name} (${err})`)
-        }
-    )
+// display some messages that a user might find helpful
+if (process.stdout.isTTY) {
+    if (process.argv.length < 3) console.error('No commandline arguments specified, defaulting to application.\nUse -a to specify application, and -g to specify guild.');
+    (mode == 'guild') && console.log(`Registering commands to guild`) || console.log(`Registering application commands, remember that Discord rate limits this`);
 }
+
+const rest = new REST().setToken(process.env.BOT_TOKEN)
 
 async function main() {
-    for (let i = 0; i < commandJSONArray.length; i++){
-        registerCommand(commandJSONArray[i])
-        await time(2000)
+// get the bot's app ID
+    res = await fetch(meEndpoint, {headers: headers});
+    if (res.ok) {
+        let data = await res.json();
+        if (data.id) appId = data.id;
     }
+    else return 1;
+
+    if (!appId) {
+        console.error(`have no app ID `)
+        return 1;
+    }
+
+    let ret = 0;
+    async function register() {
+        const route = (mode === "app") ? Routes.applicationCommands(appId) : Routes.applicationGuildCommands(appId, guildId)
+        try {
+            await rest.put(
+                Routes.applicationCommands(appId),
+                { body: commandJSONArray },
+            );
+            console.log(`Successfully registered ${commandJSONArray.length} commands`);
+        } catch (error) {
+            console.error(error);
+            ret = 1;
+        }
+    }
+    await register();
+    return ret;
 }
-main()
+let ret = 0;
+main().then(res => ret = res).catch()
+return ret;
 // God I love JavaScript
 // Also sometimes this doesn't even stop Discord's API from erroring with Too Many Requests. Life is good.
