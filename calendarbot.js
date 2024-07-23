@@ -11,7 +11,7 @@ const DiscordFunctions = require('./discord-functions.js')
 
 const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMessages] });
 
-client.on('ready', async () => {
+client.once(Discord.Events.ClientReady, async () => {
   console.log(`${client.user.username} is online!`);
   // If the file doesn't exist, make it.
   if (!existsSync('./user-data.json')) {
@@ -22,6 +22,20 @@ client.on('ready', async () => {
   scheduler.scheduleJob('0 6 * * *', () => {timetableUpdate(false)})
   scheduler.scheduleJob('0 18 * * *', () => {timetableUpdate(true)})
   scheduler.scheduleJob('0 0 1 9 *', () => {updateCourseIDs()})
+
+  const commands = require("./bot-commands.json");
+  const appId = client.application.id;
+  const scope = process.env.GUILD_ID ? Discord.Routes.applicationGuildCommands(appId, process.env.GUILD_ID) : Discord.Routes.applicationCommands(appId);
+  
+  console.log(`Registering ${commands.length} commands to ${process.env.GUILD_ID ? "GUILD" : "APPLICATION"} scope...`);
+  const rest = new Discord.REST().setToken(process.env.BOT_TOKEN);
+  try {
+    await rest.put(scope, { body: commands });
+    console.log("Successfully updated commands!");
+  } catch (error) {
+    console.error(error);
+    console.error("Bot may not work");
+  }
 });
 
 // The daily update function
