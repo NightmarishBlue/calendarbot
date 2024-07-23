@@ -1,4 +1,6 @@
 # calendarbot
+![relevant tech](https://skillicons.dev/icons?i=js,nodejs)
+
 A Discord bot for the [mytimetable](https://mytimetable.dcu.ie/) system. 
 # Get started
 CalendarBot automatically registers its commands, so all you have to do is get it running.
