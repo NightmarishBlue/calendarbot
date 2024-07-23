@@ -1,3 +1,4 @@
+// no longer necessary - bot automatically registers and refreshes its commands on startup
 const { REST, Routes } = require("discord.js");
 require('dotenv').config();
 
