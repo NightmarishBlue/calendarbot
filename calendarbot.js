@@ -103,14 +103,13 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (commandName === 'timetable') {
-    await interaction.deferReply()
     const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
     const courseID = await Timetable.fetchCourseData(courseCode).catch(err => {/*console.error(err)*/});
     // this seems to take a while. perhaps we should cache these.
 
     if (courseID == undefined) {
       let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
-      return await interaction.followUp({ embeds: [embed] });
+      return await interaction.reply({ embeds: [embed], ephemeral: true });
     };
 
     const shortDay = ['mon', 'tue', 'wed', 'thu', 'fri']
@@ -120,7 +119,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.options.getString('day') || interaction.options.getString('course').split(' ')[1]) {
       day = interaction.options.getString('day') || interaction.options.getString('course').split(' ')[1];
       day = day.toLowerCase()
-      if (!shortDay.includes(day) && !longDay.includes(day)) return await interaction.followUp({ content: `\`${day}\` doesn't seem to be a valid day.`});
+      if (!shortDay.includes(day) && !longDay.includes(day)) return await interaction.reply({ content: `\`${day}\` doesn't seem to be a valid day.`, ephemeral: true});
 
       if (day.length > 3) {
         day = longDay.find(toFind => toFind == day)
@@ -130,6 +129,7 @@ client.on('interactionCreate', async interaction => {
         day = day.charAt(0).toUpperCase() + day.slice(1)
       }
     }
+    await interaction.deferReply()
     let dateObject = new Date()
     day = Timetable.weekdays.indexOf(day)
     offset = dateObject.getDay() - day
