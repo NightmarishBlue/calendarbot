@@ -1,4 +1,4 @@
-# calendarbot
+# CalendarBot
 ![relevant tech](https://skillicons.dev/icons?i=js,nodejs,docker)
 
 A Discord bot for the [mytimetable](https://mytimetable.dcu.ie/) system. 
